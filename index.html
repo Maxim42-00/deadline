@@ -44,11 +44,16 @@ class DeadLine extends React.Component
                 let red = 255-255*k;
                 this.style.backgroundColor = `rgb(${red}, ${green}, 0)`;
             }
+            else
+            {
+                this.style.backgroundColor = `rgb(0, 255, 0)`;
+            }
         }
         else
         {
             sec = Math.floor((date - this.dead_line)/1000);
             msg = "Задание просрочено: ";
+            this.style.backgroundColor = `rgb(255, 0, 0)`;
         }
         let delta_day = Math.floor(sec/(3600*24));
         let delta_hour = Math.floor((sec - delta_day*(3600*24))/3600);
@@ -108,6 +113,8 @@ class Container extends React.Component
             if(cur.props.id === id) return false; 
             else return true;
         });
+
+        localStorage.removeItem(id);
         this.setState(
             {
                 taskArray: taskArray
