@@ -1,0 +1,202 @@
+﻿<!DOCTYPE html>
+
+<html>
+
+<head>
+    <title> </title>
+    <link rel="stylesheet" href="css/style.css" type="text/css" />
+    <meta charset='utf-8' />
+
+    <script src="https://unpkg.com/react@16/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+</head>
+
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+
+class DeadLine extends React.Component
+{
+    constructor(props)
+    {
+        super(props);
+        this.dead_line = new Date(Date.parse(props.date));
+        this.style={
+            backgroundColor: "rgb(0, 255, 0)"
+        };
+    }
+    render()
+    {
+        let date = new Date();
+        let sec;
+        let msg;
+        if(this.dead_line >= date)
+        {
+            sec = Math.floor((this.dead_line - date)/1000);
+            msg = "Осталось времени: ";
+
+            let sec_in_day = 24*3600;
+            if(sec < sec_in_day)
+            {
+                let k = sec / sec_in_day;
+                let green = 255*k;
+                let red = 255-255*k;
+                this.style.backgroundColor = `rgb(${red}, ${green}, 0)`;
+            }
+        }
+        else
+        {
+            sec = Math.floor((date - this.dead_line)/1000);
+            msg = "Задание просрочено: ";
+        }
+        let delta_day = Math.floor(sec/(3600*24));
+        let delta_hour = Math.floor((sec - delta_day*(3600*24))/3600);
+        let delta_min = Math.floor((sec - delta_day*(3600*24) - delta_hour*3600)/60);
+        let delta_sec = sec - delta_day*(3600*24) - delta_hour*3600 - delta_min*60;
+
+        return (
+            <div style={this.style}> 
+                {"Текущая дата: " + date.toString()} <br />
+                {"Дедлайн: " + this.dead_line} <br />
+                {msg} <br />
+                {"Дней: " + delta_day} <br />
+                {"Часов: " + delta_hour} <br />
+                {"Минут: " + delta_min} <br />
+                {"Секунд: " + delta_sec} <br />
+                {"Описание задачи: " + this.props.descr} <br />
+                <input type="button" onClick={() => this.props.remove(this.props.id)} value="Удалить" />
+            </div>
+        );
+    }
+};
+
+
+class Container extends React.Component
+{
+    constructor(props)
+    {
+        super(props);
+        this.state={
+            taskArray: []
+        };
+        this.addTask = this.addTask.bind(this);
+        this.remove = this.remove.bind(this);
+
+        for(let i=0; i<localStorage.length; i++)
+        {
+            let key = localStorage.key(i);
+            let new_task_props = JSON.parse(localStorage.getItem(key));
+            let new_task = <DeadLine 
+                               date={new_task_props.date} 
+                               key={new_task_props.key} 
+                               id={new_task_props.id} 
+                               remove={this.remove}
+                               descr = {new_task_props.descr}
+                           />;
+
+            this.state.taskArray.push(new_task);
+        }
+
+        this.key = localStorage.length;
+    }
+    remove(id)
+    {
+        let taskArray = this.state.taskArray;
+        taskArray = taskArray.filter((cur) => {
+            console.log(cur.props.id, id);
+            if(cur.props.id === id) return false; 
+            else return true;
+        });
+        this.setState(
+            {
+                taskArray: taskArray
+            }
+        );
+    }
+    addTask(task_descr, date_time)
+    {
+        alert(date_time);
+        let new_task = <DeadLine 
+                           date={date_time} 
+                           key={++this.key} 
+                           id={"id_"+this.key} 
+                           remove={this.remove}
+                           descr = {task_descr}
+                       />;
+
+        let new_task_props = {
+            date: date_time,
+            key: this.key,
+            id: "id_"+this.key,
+            remove: this.remove,
+            descr: task_descr         
+        };
+
+        localStorage.setItem("id_"+this.key, JSON.stringify(new_task_props));
+
+        let taskArray = this.state.taskArray;
+        taskArray.push(new_task);
+        this.setState(
+            {
+                taskArray: taskArray
+            }
+        );
+    }
+    render()
+    {
+        return (
+            <div>
+                <div>
+                    {this.state.taskArray}
+                </div>
+                <AddingForm addTask={this.addTask} />
+            </div>
+        );
+    }
+};
+
+class AddingForm extends React.Component
+{
+    constructor(props)
+    {
+        super(props);
+        this.addTask = this.addTask.bind(this);
+    }
+    addTask()
+    {
+        let task_descr = document.querySelector("#task_descr").value;
+        let task_date = document.querySelector("#task_date").value;
+        let task_time = document.querySelector("#task_time").value;
+        let date_time = task_date + "T" + task_time + ":00";
+        this.props.addTask(task_descr, date_time);
+    }
+    render()
+    {
+        return (
+            <div>
+                <p> Добавить новый дедлайн </p>
+                <div> Описание задачи </div>
+                <textarea id="task_descr" style={{width: "100%"}}></textarea>
+                <div> 
+                    Срок: 
+                    <input type="date" id="task_date" />
+                    <input type="time" id="task_time" />
+                </div>
+                <input type="button" value="Добавить задачу" onClick={this.addTask} />
+            </div>
+        );
+    }
+};
+
+
+
+ReactDOM.render(
+    <Container />,
+    document.querySelector("#root")
+);
+
+    </script>
+</body>
+
+</html>
